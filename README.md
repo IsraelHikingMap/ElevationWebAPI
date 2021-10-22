@@ -1,2 +1,2 @@
-# elevation-micro-service
-A .net core elevation service
+# Elevation Micro Serive
+A .net core elevation service that uses hgt files to return elevation information for a given latitude and longtitude
