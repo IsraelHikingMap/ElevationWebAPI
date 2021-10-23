@@ -14,7 +14,7 @@ using NetTopologySuite.Geometries;
 
 namespace ElevationMicroService
 {
-    internal record FileAndSize(MemoryMappedFile File, long Length, int Samples);
+    internal record FileAndSamples(MemoryMappedFile File, int Samples);
 
     /// <summary>
     /// The elevation provider based on memory mapped hgt files
@@ -28,7 +28,7 @@ namespace ElevationMicroService
 
         private readonly ILogger<ElevationProvider> _logger;
         private readonly IFileProvider _fileProvider;
-        private readonly ConcurrentDictionary<Coordinate, Task<FileAndSize>> _initializationTaskPerLatLng;
+        private readonly ConcurrentDictionary<Coordinate, Task<FileAndSamples>> _initializationTaskPerLatLng;
 
         /// <summary>
         /// Constructor
@@ -128,8 +128,7 @@ namespace ElevationMicroService
                             $"Files in {ELEVATION_CACHE} folder should be either hgt, zip or bz2 but found {Path.GetExtension(fileInfo.PhysicalPath)}");
                     }
                     int samples = (int) (Math.Sqrt(fileInfo.Length / 2.0) + 0.5);
-                    return new FileAndSize(MemoryMappedFile.CreateFromFile(fileInfo.PhysicalPath, FileMode.Open),
-                        fileInfo.Length, samples);
+                    return new FileAndSamples(MemoryMappedFile.CreateFromFile(fileInfo.PhysicalPath, FileMode.Open), samples);
                 });
             }
 
@@ -181,7 +180,7 @@ namespace ElevationMicroService
         /// <param name="j">j index in file</param>
         /// <param name="info">The info relevant to the file</param>
         /// <returns></returns>
-        private (CoordinateZ, CoordinateZ) GetElevationForLocation(int i, int j, FileAndSize info)
+        private (CoordinateZ, CoordinateZ) GetElevationForLocation(int i, int j, FileAndSamples info)
         {
             var byteIndex = (i * info.Samples + j) * 2;
             var stream = info.File.CreateViewStream(byteIndex, 4);
