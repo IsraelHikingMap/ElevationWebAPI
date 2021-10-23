@@ -1,13 +1,11 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+﻿FROM mcr.microsoft.com/dotnet/sdk:5.0.300 AS build
 WORKDIR /app
 COPY . .
 RUN dotnet publish "ElevationMicroService.csproj" -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0
 WORKDIR /app
-EXPOSE 80
-
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 HEALTHCHECK --interval=5s --timeout=3s CMD curl --fail http://localhost:80/api/health || exit 1
-
+EXPOSE 80
 ENTRYPOINT ["dotnet", "ElevationMicroService.dll"]

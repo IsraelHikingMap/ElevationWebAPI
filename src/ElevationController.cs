@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
-namespace ElevationMicroService.Controllers
+namespace ElevationMicroService
 {
+    /// <summary>
+    /// The elevation controller and entry point
+    /// </summary>
     [ApiController]
-    [Route("[controller]")]
+    [Route("")]
     public class ElevationController : ControllerBase
     {
         private readonly ElevationProvider _elevationProvider;
@@ -24,6 +24,7 @@ namespace ElevationMicroService.Controllers
 
         /// <summary>
         /// Get elevation for the given points.
+        /// This call might be limited by the total address size, see POST for unlimited number
         /// </summary>
         /// <param name="points">The points array - each point should be latitude,longitude and use '|' to separate between points</param>
         /// <returns>An array of elevation values according to given points order</returns>
@@ -38,6 +39,11 @@ namespace ElevationMicroService.Controllers
             return _elevationProvider.GetElevation(pointsArray);
         }
         
+        /// <summary>
+        /// Allows retrieving elevation for points
+        /// </summary>
+        /// <param name="points">An array of points array - each point is an array [lon, lat]</param>
+        /// <returns>An array of elevation correlating to the given points array order</returns>
         [HttpPost]
         public Task<double[]> PostElevation([FromBody] double[][] points)
         {
