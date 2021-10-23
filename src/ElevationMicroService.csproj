@@ -24,57 +24,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="elevation-cahce\N28E034.hgt.zip" />
-      <None Remove="elevation-cahce\N29E034.hgt.zip" />
-      <None Remove="elevation-cahce\N29E035.hgt.zip" />
-      <None Remove="elevation-cahce\N30E033.hgt.zip" />
-      <None Remove="elevation-cahce\N30E034.hgt.zip" />
-      <None Remove="elevation-cahce\N30E035.hgt.zip" />
-      <None Remove="elevation-cahce\N30E036.hgt.zip" />
-      <None Remove="elevation-cahce\N31E034.hgt.zip" />
-      <None Remove="elevation-cahce\N31E035.hgt.zip" />
-      <None Remove="elevation-cahce\N32E034.hgt.zip" />
-      <None Remove="elevation-cahce\N32E035.hgt.zip" />
-      <Content Include="elevation-cache\N32E035.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cahce\N32E036.hgt.zip" />
-      <None Remove="elevation-cahce\N33E034.hgt.zip" />
-      <None Remove="elevation-cahce\N33E035.hgt.zip" />
-      <None Remove="elevation-cache\N29E034.hgt.zip" />
-      <Content Include="elevation-cache\N29E034.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N29E035.hgt.zip" />
-      <Content Include="elevation-cache\N29E035.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N30E034.hgt.zip" />
-      <Content Include="elevation-cache\N30E034.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N30E035.hgt.zip" />
-      <Content Include="elevation-cache\N30E035.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N31E034.hgt.zip" />
-      <Content Include="elevation-cache\N31E034.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N31E035.hgt.zip" />
-      <Content Include="elevation-cache\N31E035.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N32E034.hgt.zip" />
-      <Content Include="elevation-cache\N32E034.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N33E034.hgt.zip" />
-      <Content Include="elevation-cache\N33E034.hgt.zip">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="elevation-cache\N33E035.hgt.zip" />
-      <Content Include="elevation-cache\N33E035.hgt.zip">
+      <None Remove="elevation-cahce\*" />
+      <Content Include="elevation-cache\*">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

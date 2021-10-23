@@ -6,6 +6,7 @@ using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ICSharpCode.SharpZipLib.BZip2;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
@@ -95,22 +96,38 @@ namespace ElevationMicroService
                 var key = new Coordinate(bottomLeftLng, bottomLeftLat);
                 _initializationTaskPerLatLng[key] = Task.Run(() =>
                 {
-                    int samples;
-                    if (hgtFile.PhysicalPath.EndsWith("hgt"))
+                    IFileInfo fileInfo = hgtFile;
+                    if (hgtFile.PhysicalPath.EndsWith(".bz2"))
                     {
-                        samples = (int) (Math.Sqrt(hgtFile.Length / 2.0) + 0.5);
-                        return new FileAndSize(MemoryMappedFile.CreateFromFile(hgtFile.PhysicalPath, FileMode.Open),
-                            hgtFile.Length, samples);
+                        _logger.LogInformation($"Starting decompressing file {hgtFile.Name}");
+                        var hgtFilePath = hgtFile.PhysicalPath.Replace(".bz2", "");
+                        BZip2.Decompress(hgtFile.CreateReadStream(),
+                            File.Create(hgtFilePath), true);
+                        File.Delete(hgtFile.PhysicalPath);
+                        fileInfo = _fileProvider.GetFileInfo(Path.Join(ELEVATION_CACHE, Path.GetFileName(hgtFilePath)));
+                        _logger.LogInformation($"Finished decompressing file {hgtFile.Name}");
+                    } 
+                    else if (hgtFile.PhysicalPath.EndsWith(".zip"))
+                    {
+                        _logger.LogInformation($"Starting decompressing file {hgtFile.Name}");
+                        var fastZip = new FastZip();
+                        var cacheFolder = _fileProvider.GetFileInfo(ELEVATION_CACHE).PhysicalPath;
+                        fastZip.ExtractZip(hgtFile.PhysicalPath, cacheFolder, null);
+                        File.Delete(hgtFile.PhysicalPath);
+                        var hgtFilePath = hgtFile.PhysicalPath.Replace(".zip", "");
+                        fileInfo = _fileProvider.GetFileInfo(Path.Join(ELEVATION_CACHE, Path.GetFileName(hgtFilePath)));
+                        _logger.LogInformation($"Finished decompressing file {hgtFile.Name}");
+                    } 
+                    else if (hgtFile.PhysicalPath.EndsWith("hgt"))
+                    {
+                        fileInfo = hgtFile;
                     }
-
-                    var fastZip = new FastZip();
-                    var cacheFolder = _fileProvider.GetFileInfo(ELEVATION_CACHE).PhysicalPath;
-                    fastZip.ExtractZip(hgtFile.PhysicalPath, cacheFolder, null);
-                    File.Delete(hgtFile.PhysicalPath);
-                    var hgtFilePath = hgtFile.PhysicalPath.Replace(".zip", "").Replace(".bz2", "");
-                    var fileInfo = _fileProvider.GetFileInfo(Path.Join(ELEVATION_CACHE, Path.GetFileName(hgtFilePath)));
-                    samples = (int) (Math.Sqrt(fileInfo.Length / 2.0) + 0.5);
-                    
+                    else
+                    {
+                        throw new InvalidDataException(
+                            $"Files in {ELEVATION_CACHE} folder should be either hgt, zip or bz2 but found {Path.GetExtension(fileInfo.PhysicalPath)}");
+                    }
+                    int samples = (int) (Math.Sqrt(fileInfo.Length / 2.0) + 0.5);
                     return new FileAndSize(MemoryMappedFile.CreateFromFile(fileInfo.PhysicalPath, FileMode.Open),
                         fileInfo.Length, samples);
                 });
