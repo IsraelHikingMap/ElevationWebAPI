@@ -2,7 +2,7 @@
 
 A .net core elevation service that uses memory mapped hgt files to return elevation information for a given latitude and longitude array.
 
-To build a docker image: 
+To build the docker image: 
 ```
 cd src
 docker build -t elevationwebapi .
@@ -11,8 +11,10 @@ docker run -p 12345:80 elevationwebapi -v /hgt-files-folder:/app/elevation-cache
 
 Now surf to `localhost:12345/swagger/` to get a simple UI to interact with the elevation service
 
-This repository only hold elevation for Israel, which is a small country and the implementation he might be enough, it might not be the cause for bigger countries.
-If you would like to see if it works change the zip file in the elevation-cache folder to your hgt zip/bz2 files.
+This repository was only tested for elevation for Israel, which is a small country and the implementation be might be enough, it might not be the case for bigger countries.
+
+This service supports both GET and POST methods for getting the elevation.
+You can place in the elevation folder zip or bz2 compressed files and the service will decompress them when booting up.
 
 This docker file is also available on docker hub: `israelhikingmap/elevationwebapi`
 
