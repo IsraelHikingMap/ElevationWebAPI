@@ -1,4 +1,3 @@
-using ICSharpCode.SharpZipLib.Zip;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -7,12 +6,13 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.BZip2;
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
 
-namespace ElevationMicroService
+namespace ElevationWebApi
 {
     internal record FileAndSamples(MemoryMappedFile File, int Samples);
 
@@ -44,7 +44,7 @@ namespace ElevationMicroService
 
         /// <summary>
         /// Initializes the provider by reading the elevation-cache directory,
-        /// extracting the zip files and memory mapping them to a dictionary
+        /// extracting the zip/bz2 files if needed and memory mapping them to a dictionary
         /// </summary>
         public async Task Initialize()
         {
@@ -137,11 +137,7 @@ namespace ElevationMicroService
         }
 
         /// <summary>
-        /// Calculates the elevation of a point using a preloaded data, using intepolation of 3 points in a plane:
-        /// 3
-        /// |    p
-        /// |  
-        /// 1______2
+        /// Calculates the elevation of a point using a preloaded data, using bilinear interpolation
         /// </summary>
         /// <param name="latLngs">An array of point to calculate elevation for</param>
         /// <returns>A task with the elevation results</returns>
@@ -165,8 +161,8 @@ namespace ElevationMicroService
                 if (i == info.Samples - 1) i--;
                 if (j == info.Samples - 1) j--;
 
-                (var p11, var p21) = GetElevationForLocation(i, j, info);
-                (var p12, var p22) = GetElevationForLocation(i + 1, j, info);
+                var (p11, p21) = GetElevationForLocation(i, j, info);
+                var (p12, p22) = GetElevationForLocation(i + 1, j, info);
                 return BiLinearInterpolation(p11, p12, p21, p22, exactLocation);
             }).ToArray();
             return Task.WhenAll(tasks);
@@ -183,7 +179,7 @@ namespace ElevationMicroService
         private (CoordinateZ, CoordinateZ) GetElevationForLocation(int i, int j, FileAndSamples info)
         {
             var byteIndex = (i * info.Samples + j) * 2;
-            var stream = info.File.CreateViewStream(byteIndex, 4);
+            using var stream = info.File.CreateViewStream(byteIndex, 4);
             Span<byte> byteArray = new byte[4];
             stream.Read(byteArray);
             short elevationFirst = BitConverter.ToInt16(new[] {byteArray[1], byteArray[0]}, 0);

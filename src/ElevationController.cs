@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ElevationMicroService
+namespace ElevationWebApi
 {
     /// <summary>
     /// The elevation controller and entry point

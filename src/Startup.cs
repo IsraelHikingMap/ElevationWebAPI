@@ -9,7 +9,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
-namespace ElevationMicroService
+namespace ElevationWebApi
 {
     /// <summary>
     /// The startup class for this service
@@ -41,7 +41,7 @@ namespace ElevationMicroService
             services.AddHealthChecks();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo {Title = "ElevationMicroService", Version = "v1"});
+                c.SwaggerDoc("v1", new OpenApiInfo {Title = "Elevation Service", Version = "v1"});
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
@@ -61,7 +61,7 @@ namespace ElevationMicroService
             }
             
             app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ElevationMicroService v1"));
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elevation Service v1"));
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
