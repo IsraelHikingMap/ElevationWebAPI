@@ -18,4 +18,7 @@ You can place in the elevation folder zip or bz2 compressed files and the servic
 
 This docker file is also available on docker hub: `israelhikingmap/elevationwebapi`
 
+You can choose between two types of elevation providers by specifying the `ELEVATION_PROVIDER` environment variable:
+`MMAP` - For memory mapped elevation provider
+Default - In memory elevation provider
 
