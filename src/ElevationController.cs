@@ -11,13 +11,13 @@ namespace ElevationWebApi
     [Route("")]
     public class ElevationController : ControllerBase
     {
-        private readonly ElevationProvider _elevationProvider;
+        private readonly IElevationProvider _elevationProvider;
 
         /// <summary>
         /// Controller's constructor
         /// </summary>
         /// <param name="elevationProvider"></param>
-        public ElevationController(ElevationProvider elevationProvider)
+        public ElevationController(IElevationProvider elevationProvider)
         {
             _elevationProvider = elevationProvider;
         }

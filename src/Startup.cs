@@ -36,7 +36,15 @@ namespace ElevationWebApi
         /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<ElevationProvider>();
+            if (Environment.GetEnvironmentVariable("ELEVATION_PROVIDER") == "MMAP")
+            {
+                services.AddSingleton<IElevationProvider, MemoryMapElevationProvider>();
+            }
+            else
+            {
+                services.AddSingleton<IElevationProvider, InMemoryElevationProvider>();    
+            }
+            
             services.AddControllers();
             services.AddHealthChecks();
             services.AddSwaggerGen(c =>
@@ -69,7 +77,7 @@ namespace ElevationWebApi
                 endpoints.MapControllers();
             });
 #pragma warning disable CS4014 // not awaited...
-            app.ApplicationServices.GetService<ElevationProvider>().Initialize();
+            app.ApplicationServices.GetService<IElevationProvider>().Initialize();
 #pragma warning restore CS4014
         }
     }
