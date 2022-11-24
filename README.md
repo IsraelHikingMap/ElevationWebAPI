@@ -4,7 +4,6 @@ A .net core elevation service that uses memory mapped hgt files to return elevat
 
 To build the docker image: 
 ```
-cd src
 docker build -t elevationwebapi .
 docker run -p 12345:80 elevationwebapi -v /hgt-files-folder:/app/elevation-cache
 ```
