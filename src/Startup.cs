@@ -65,7 +65,7 @@ namespace ElevationWebApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                env.ContentRootFileProvider = new PhysicalFileProvider(Path.Join(env.ContentRootPath, "bin/Debug/net5.0"));
+                env.ContentRootFileProvider = new PhysicalFileProvider(Path.Join(env.ContentRootPath, "bin/Debug/net9.0"));
             }
             
             app.UseSwagger();

@@ -17,7 +17,7 @@ namespace ElevationWebApi
         private static readonly Regex HGT_NAME =
             new(@"(?<latHem>N|S)(?<lat>\d{2})(?<lonHem>W|E)(?<lon>\d{3})(.*)\.hgt");
         
-        public static bool ValidateAndClearDuplication(IFileProvider fileProvider, ILogger logger)
+        public static bool ValidateFolder(IFileProvider fileProvider, ILogger logger)
         {
             if (fileProvider.GetDirectoryContents(ELEVATION_CACHE).Any() == false)
             {
@@ -26,32 +26,13 @@ namespace ElevationWebApi
             }
 
             var hgtFiles = fileProvider.GetDirectoryContents(ELEVATION_CACHE);
-            if (!hgtFiles.Any())
+            if (hgtFiles.Any())
             {
-                logger.LogError($"Elevation service initialization: There are no file in folder: {ELEVATION_CACHE}");
-                return false;
+                return true;
             }
+            logger.LogError($"Elevation service initialization: There are no file in folder: {ELEVATION_CACHE}");
+            return false;
 
-            var duplicateFilesPath = hgtFiles.Select(f => f.PhysicalPath.Replace(".zip", "").Replace(".bz2", ""))
-                .GroupBy(f => f)
-                .Where(f => f.Count() == 2)
-                .Select(g => g.First())
-                .ToArray();
-            foreach (var fileName in duplicateFilesPath)
-            {
-                if (File.Exists(fileName + ".zip"))
-                {
-                    logger.LogInformation($"Deleting duplicate file {fileName}");
-                    File.Delete(fileName + ".zip");
-                }
-                if (File.Exists(fileName + ".bz2"))
-                {
-                    logger.LogInformation($"Deleting duplicate file {fileName}");
-                    File.Delete(fileName + ".bz2");
-                }
-            }
-
-            return true;
         }
 
         public static Coordinate FileNameToKey(string fileName)
@@ -76,21 +57,27 @@ namespace ElevationWebApi
             {
                 if (hgtFile.PhysicalPath.EndsWith(".bz2"))
                 {
-                    logger.LogInformation($"Starting decompressing file {hgtFile.Name}");
                     var hgtFilePath = hgtFile.PhysicalPath.Replace(".bz2", "");
+                    if (hgtFiles.FirstOrDefault(f => f.PhysicalPath == hgtFilePath) != null)
+                    {
+                        continue;
+                    }
+                    logger.LogInformation($"Starting decompressing file {hgtFile.Name}");
                     BZip2.Decompress(hgtFile.CreateReadStream(),
                         File.Create(hgtFilePath), true);
-                    File.Delete(hgtFile.PhysicalPath);
                     logger.LogInformation($"Finished decompressing file {hgtFile.Name}");
                 } 
                 else if (hgtFile.PhysicalPath.EndsWith(".zip"))
                 {
+                    var hgtFilePath = hgtFile.PhysicalPath.Replace(".zip", "");
+                    if (hgtFiles.FirstOrDefault(f => f.PhysicalPath == hgtFilePath) != null)
+                    {
+                        continue;
+                    }
                     logger.LogInformation($"Starting decompressing file {hgtFile.Name}");
                     var fastZip = new FastZip();
                     var cacheFolder = fileProvider.GetFileInfo(ELEVATION_CACHE).PhysicalPath;
                     fastZip.ExtractZip(hgtFile.PhysicalPath, cacheFolder, null);
-                    File.Delete(hgtFile.PhysicalPath);
-                    var hgtFilePath = hgtFile.PhysicalPath.Replace(".zip", "");
                     logger.LogInformation($"Finished decompressing file {hgtFile.Name}");
                 } 
             }

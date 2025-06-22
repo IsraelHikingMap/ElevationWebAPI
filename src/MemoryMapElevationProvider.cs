@@ -40,7 +40,7 @@ namespace ElevationWebApi
         /// </summary>
         public async Task Initialize()
         {
-            if (!ElevationHelper.ValidateAndClearDuplication(_fileProvider, _logger))
+            if (!ElevationHelper.ValidateFolder(_fileProvider, _logger))
             {
                 return;
             }
@@ -49,6 +49,10 @@ namespace ElevationWebApi
             var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE);
             foreach (var hgtFile in hgtFiles)
             {
+                if (!hgtFile.PhysicalPath.EndsWith(".hgt"))
+                {
+                    continue;
+                }
                 var key = ElevationHelper.FileNameToKey(hgtFile.Name);
                 _initializationTaskPerLatLng[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(hgtFile.PhysicalPath, FileMode.Open), ElevationHelper.SamplesFromLength(hgtFile.Length)));
             }

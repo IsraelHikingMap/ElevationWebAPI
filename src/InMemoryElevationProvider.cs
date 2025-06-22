@@ -35,7 +35,7 @@ namespace ElevationWebApi
         /// <inheritdoc/>
         public async Task Initialize()
         {
-            if (!ElevationHelper.ValidateAndClearDuplication(_fileProvider, _logger))
+            if (!ElevationHelper.ValidateFolder(_fileProvider, _logger))
             {
                 return;
             }
@@ -45,6 +45,10 @@ namespace ElevationWebApi
 
             foreach (var hgtFile in hgtFiles)
             {
+                if (!hgtFile.PhysicalPath.EndsWith(".hgt"))
+                {
+                    continue;
+                }
                 var key = ElevationHelper.FileNameToKey(hgtFile.Name);
                 _initializationTaskPerLatLng[key] = Task.Run(() =>
                 {
