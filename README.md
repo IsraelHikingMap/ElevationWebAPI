@@ -5,7 +5,7 @@ A .net core elevation service that uses memory mapped hgt files to return elevat
 To build the docker image: 
 ```
 docker build -t elevationwebapi .
-docker run -p 12345:80 -v /hgt-files-folder:/app/elevation-cache elevationwebapi 
+docker run -p 12345:8080 -v /hgt-files-folder:/app/elevation-cache elevationwebapi 
 ```
 
 Now surf to `localhost:12345/swagger/` to get a simple UI to interact with the elevation service
