@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Core;
 using Microsoft.AspNetCore.Hosting;
@@ -19,7 +18,7 @@ namespace ElevationWebApi
     {
         private readonly ILogger<InMemoryElevationProvider> _logger;
         private readonly IFileProvider _fileProvider;
-        private readonly ConcurrentDictionary<string, Task<BytesAndSamples>> _initializationTaskPerLatLng;
+        private readonly ConcurrentDictionary<Coordinate, Task<BytesAndSamples>> _initializationTaskPerLatLng;
         
         /// <summary>
         /// Constructor
@@ -51,13 +50,21 @@ namespace ElevationWebApi
                     continue;
                 }
                 var key = ElevationHelper.FileNameToKey(hgtFile.Name);
-                _initializationTaskPerLatLng[key.ToString()] = Task.Run(() =>
+                _initializationTaskPerLatLng[key] = Task.Run(() =>
                 {
-                    var stream = hgtFile.CreateReadStream();
-                    using var memoryStream = new MemoryStream();
-                    StreamUtils.Copy(stream, memoryStream, new byte[4096]);
-                    var bytes = memoryStream.ToArray();
-                    return new BytesAndSamples(bytes, ElevationHelper.SamplesFromLength(bytes.Length));
+                    try
+                    {
+                        var stream = hgtFile.CreateReadStream();
+                        using var memoryStream = new MemoryStream();
+                        StreamUtils.Copy(stream, memoryStream, new byte[4096]);
+                        var bytes = memoryStream.ToArray();
+                        return new BytesAndSamples(bytes, ElevationHelper.SamplesFromLength(bytes.Length));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning($"Failed to read file {hgtFile} hgtFile, {ex.Message}");
+                        throw;
+                    }
                 });
             }
             
@@ -72,14 +79,13 @@ namespace ElevationWebApi
             foreach (var latLng in latLngs)
             {
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
-                if (_initializationTaskPerLatLng.ContainsKey(key.ToString()) == false)
+                if (_initializationTaskPerLatLng.ContainsKey(key) == false)
                 {
-                    _logger.LogWarning($"Unable to find elevation file key: {key}, keys are {string.Join(";",_initializationTaskPerLatLng.Keys)}");
                     elevation.Add(0);
                     continue;
                 }
 
-                var info = await _initializationTaskPerLatLng[key.ToString()];
+                var info = await _initializationTaskPerLatLng[key];
 
                 var exactLocation = new Coordinate(Math.Abs(latLng[0] - key.X) * (info.Samples - 1),
                     (1 - Math.Abs(latLng[1] - key.Y)) * (info.Samples - 1));
