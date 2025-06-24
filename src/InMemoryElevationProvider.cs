@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Core;
 using Microsoft.AspNetCore.Hosting;
@@ -73,7 +74,7 @@ namespace ElevationWebApi
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
                 if (_initializationTaskPerLatLng.ContainsKey(key.ToString()) == false)
                 {
-                    _logger.LogWarning($"Unable to find elevation file key: {key}, there are {_initializationTaskPerLatLng.Keys.Count} in the tasks list.");
+                    _logger.LogWarning($"Unable to find elevation file key: {key}, keys are {string.Join(";",_initializationTaskPerLatLng.Keys)}");
                     elevation.Add(0);
                     continue;
                 }
