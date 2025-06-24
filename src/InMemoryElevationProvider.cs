@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Core;
 using Microsoft.AspNetCore.Hosting;
@@ -41,14 +42,11 @@ namespace ElevationWebApi
             }
 
             ElevationHelper.UnzipIfNeeded(_fileProvider, _logger);
-            var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE);
-
+            var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE)
+                    .Where(f => f.PhysicalPath.EndsWith(".hgt")).ToArray();
+            _logger.LogInformation($"Found {hgtFiles.Length} hgt files.");
             foreach (var hgtFile in hgtFiles)
             {
-                if (!hgtFile.PhysicalPath.EndsWith(".hgt"))
-                {
-                    continue;
-                }
                 var key = ElevationHelper.FileNameToKey(hgtFile.Name);
                 if (key == null)
                 {
