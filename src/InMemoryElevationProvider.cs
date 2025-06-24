@@ -61,6 +61,7 @@ namespace ElevationWebApi
             }
             
             await Task.WhenAll(_initializationTaskPerLatLng.Values);
+            _logger.LogInformation("Initialization complete.");
         }
 
         /// <inheritdoc/>
@@ -72,6 +73,7 @@ namespace ElevationWebApi
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
                 if (_initializationTaskPerLatLng.ContainsKey(key) == false)
                 {
+                    _logger.LogWarning($"Unable to find elevation file key: {key}, there are {_initializationTaskPerLatLng.Keys.Count} in the tasks list.");
                     elevation.Add(0);
                     continue;
                 }
