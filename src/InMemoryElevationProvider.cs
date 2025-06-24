@@ -18,7 +18,7 @@ namespace ElevationWebApi
     {
         private readonly ILogger<InMemoryElevationProvider> _logger;
         private readonly IFileProvider _fileProvider;
-        private readonly ConcurrentDictionary<Coordinate, Task<BytesAndSamples>> _initializationTaskPerLatLng;
+        private readonly ConcurrentDictionary<string, Task<BytesAndSamples>> _initializationTaskPerLatLng;
         
         /// <summary>
         /// Constructor
@@ -50,7 +50,7 @@ namespace ElevationWebApi
                     continue;
                 }
                 var key = ElevationHelper.FileNameToKey(hgtFile.Name);
-                _initializationTaskPerLatLng[key] = Task.Run(() =>
+                _initializationTaskPerLatLng[key.ToString()] = Task.Run(() =>
                 {
                     var stream = hgtFile.CreateReadStream();
                     using var memoryStream = new MemoryStream();
@@ -71,14 +71,14 @@ namespace ElevationWebApi
             foreach (var latLng in latLngs)
             {
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
-                if (_initializationTaskPerLatLng.ContainsKey(key) == false)
+                if (_initializationTaskPerLatLng.ContainsKey(key.ToString()) == false)
                 {
                     _logger.LogWarning($"Unable to find elevation file key: {key}, there are {_initializationTaskPerLatLng.Keys.Count} in the tasks list.");
                     elevation.Add(0);
                     continue;
                 }
 
-                var info = await _initializationTaskPerLatLng[key];
+                var info = await _initializationTaskPerLatLng[key.ToString()];
 
                 var exactLocation = new Coordinate(Math.Abs(latLng[0] - key.X) * (info.Samples - 1),
                     (1 - Math.Abs(latLng[1] - key.Y)) * (info.Samples - 1));
