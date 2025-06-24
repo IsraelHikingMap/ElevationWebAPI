@@ -50,6 +50,11 @@ namespace ElevationWebApi
                     continue;
                 }
                 var key = ElevationHelper.FileNameToKey(hgtFile.Name);
+                if (key == null)
+                {
+                    _logger.LogWarning($"Ignoring file: {hgtFile.Name}");
+                    continue;
+                }
                 _initializationTaskPerLatLng[key] = Task.Run(() =>
                 {
                     try
