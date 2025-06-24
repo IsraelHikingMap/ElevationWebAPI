@@ -46,19 +46,22 @@ namespace ElevationWebApi
             }
             
             ElevationHelper.UnzipIfNeeded(_fileProvider, _logger);
-            var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE);
+            var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE)
+                .Where(f => f.PhysicalPath.EndsWith(".hgt")).ToArray();
+            _logger.LogInformation($"Found {hgtFiles.Length} hgt files.");
             foreach (var hgtFile in hgtFiles)
             {
-                if (!hgtFile.PhysicalPath.EndsWith(".hgt"))
+                var key = ElevationHelper.FileNameToKey(hgtFile.Name);
+                if (key == null)
                 {
+                    _logger.LogWarning($"Ignoring file: {hgtFile.Name}");
                     continue;
                 }
-                var key = ElevationHelper.FileNameToKey(hgtFile.Name);
                 _initializationTaskPerLatLng[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(hgtFile.PhysicalPath, FileMode.Open), ElevationHelper.SamplesFromLength(hgtFile.Length)));
             }
 
             await Task.WhenAll(_initializationTaskPerLatLng.Values);
-            _logger.LogInformation($"Finished initializing elevation service, Found {hgtFiles.Count()} files.");
+            _logger.LogInformation("Initialization complete.");
         }
 
         /// <summary>

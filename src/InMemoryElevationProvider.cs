@@ -55,19 +55,11 @@ namespace ElevationWebApi
                 }
                 _initializationTaskPerLatLng[key] = Task.Run(() =>
                 {
-                    try
-                    {
-                        var stream = hgtFile.CreateReadStream();
-                        using var memoryStream = new MemoryStream();
-                        StreamUtils.Copy(stream, memoryStream, new byte[4096]);
-                        var bytes = memoryStream.ToArray();
-                        return new BytesAndSamples(bytes, ElevationHelper.SamplesFromLength(bytes.Length));
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning($"Failed to read file {hgtFile} hgtFile, {ex.Message}");
-                        throw;
-                    }
+                    var stream = hgtFile.CreateReadStream();
+                    using var memoryStream = new MemoryStream();
+                    StreamUtils.Copy(stream, memoryStream, new byte[4096]);
+                    var bytes = memoryStream.ToArray();
+                    return new BytesAndSamples(bytes, ElevationHelper.SamplesFromLength(bytes.Length));
                 });
             }
             
