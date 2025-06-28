@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -20,7 +21,8 @@ namespace ElevationWebApi
     {
         private readonly ILogger<MemoryMapElevationProvider> _logger;
         private readonly IFileProvider _fileProvider;
-        private readonly ConcurrentDictionary<Coordinate, Task<FileAndSamples>> _initializationTaskPerLatLng;
+        private readonly ConcurrentDictionary<Coordinate, Task<FileAndSamples>> _mappedFilesCache;
+        private readonly Dictionary<Coordinate, (string path, long length)> _initializationAvailableFiles;
 
         /// <summary>
         /// Constructor
@@ -31,23 +33,24 @@ namespace ElevationWebApi
         {
             _logger = logger;
             _fileProvider = webHostEnvironment.ContentRootFileProvider;
-            _initializationTaskPerLatLng = new();
+            _mappedFilesCache = new();
+            _initializationAvailableFiles = new();
         }
 
         /// <summary>
         /// Initializes the provider by reading the elevation-cache directory,
         /// extracting the zip/bz2 files if needed and memory mapping them to a dictionary
         /// </summary>
-        public async Task Initialize()
+        public Task Initialize()
         {
             if (!ElevationHelper.ValidateFolder(_fileProvider, _logger))
             {
-                return;
+                return Task.CompletedTask;
             }
             
             ElevationHelper.UnzipIfNeeded(_fileProvider, _logger);
             var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE)
-                .Where(f => f.PhysicalPath.EndsWith(".hgt")).ToArray();
+                .Where(f => f.PhysicalPath != null && f.PhysicalPath.EndsWith(".hgt")).ToArray();
             _logger.LogInformation($"Found {hgtFiles.Length} hgt files.");
             foreach (var hgtFile in hgtFiles)
             {
@@ -57,11 +60,12 @@ namespace ElevationWebApi
                     _logger.LogWarning($"Ignoring file: {hgtFile.Name}");
                     continue;
                 }
-                _initializationTaskPerLatLng[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(hgtFile.PhysicalPath, FileMode.Open), ElevationHelper.SamplesFromLength(hgtFile.Length)));
-            }
 
-            await Task.WhenAll(_initializationTaskPerLatLng.Values);
+                _initializationAvailableFiles[key] = (hgtFile.PhysicalPath, hgtFile.Length); 
+            }
+            
             _logger.LogInformation("Initialization complete.");
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -74,12 +78,17 @@ namespace ElevationWebApi
             var tasks = latLngs.Select(async latLng =>
             {
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
-                if (_initializationTaskPerLatLng.ContainsKey(key) == false)
+                if (_initializationAvailableFiles.TryGetValue(key, out (string path, long length) pathAndLength) == false)
                 {
                     return 0;
                 }
 
-                var info = await _initializationTaskPerLatLng[key];
+                if (!_mappedFilesCache.ContainsKey(key))
+                {
+                    _logger.LogInformation($"Loading {pathAndLength.path} into memory mapped cache");
+                    _mappedFilesCache[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(pathAndLength.path, FileMode.Open), ElevationHelper.SamplesFromLength(pathAndLength.length)));
+                }
+                var info = await _mappedFilesCache[key];
 
                 var exactLocation = new Coordinate(Math.Abs(latLng[0] - key.X) * (info.Samples - 1),
                     (1 - Math.Abs(latLng[1] - key.Y)) * (info.Samples - 1));
@@ -100,8 +109,8 @@ namespace ElevationWebApi
         /// Get the elevation of the two adjacent indices (i,j), (i, j+1)
         /// Then converts them to 3d points 
         /// </summary>
-        /// <param name="i">i Index in file</param>
-        /// <param name="j">j index in file</param>
+        /// <param name="i">I Index in file</param>
+        /// <param name="j">J index in file</param>
         /// <param name="info">The info relevant to the file</param>
         /// <returns></returns>
         private (CoordinateZ, CoordinateZ) GetElevationForLocation(int i, int j, FileAndSamples info)
@@ -111,7 +120,7 @@ namespace ElevationWebApi
                 var byteIndex = (i1 * info.Samples + j1) * 2;
                 using var stream = info.File.CreateViewStream(byteIndex, 4);
                 byte[] byteArray = new byte[4];
-                stream.Read(byteArray);
+                stream.ReadExactly(byteArray);
                 return byteArray;
             });
         }

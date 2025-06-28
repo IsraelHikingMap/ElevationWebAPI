@@ -9,6 +9,8 @@ ProjectSection(SolutionItems) = preProject
 	Dockerfile = Dockerfile
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElevationWebApiTests", "ElevationWebApiTests\ElevationWebApiTests.csproj", "{6210339D-AAD6-4BFC-9314-4C8A4FADFF67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,5 +21,9 @@ Global
 		{DFEF0265-106B-4E81-A763-D2DE297E1AD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFEF0265-106B-4E81-A763-D2DE297E1AD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFEF0265-106B-4E81-A763-D2DE297E1AD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6210339D-AAD6-4BFC-9314-4C8A4FADFF67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6210339D-AAD6-4BFC-9314-4C8A4FADFF67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6210339D-AAD6-4BFC-9314-4C8A4FADFF67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6210339D-AAD6-4BFC-9314-4C8A4FADFF67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
