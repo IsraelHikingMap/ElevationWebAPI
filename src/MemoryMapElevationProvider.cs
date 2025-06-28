@@ -43,6 +43,7 @@ namespace ElevationWebApi
         /// </summary>
         public Task Initialize()
         {
+            _logger.LogInformation("Starting Initialization of Memory Map Elevation Provider.");
             if (!ElevationHelper.ValidateFolder(_fileProvider, _logger))
             {
                 return Task.CompletedTask;
@@ -64,7 +65,7 @@ namespace ElevationWebApi
                 _initializationAvailableFiles[key] = (hgtFile.PhysicalPath, hgtFile.Length); 
             }
             
-            _logger.LogInformation("Initialization complete.");
+            _logger.LogInformation("Finished Initialization.");
             return Task.CompletedTask;
         }
 

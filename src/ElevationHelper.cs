@@ -19,20 +19,12 @@ namespace ElevationWebApi
         
         public static bool ValidateFolder(IFileProvider fileProvider, ILogger logger)
         {
-            if (fileProvider.GetDirectoryContents(ELEVATION_CACHE).Any() == false)
-            {
-                logger.LogError($"Elevation service initialization: The folder: {ELEVATION_CACHE} does not exists, please make sure this folder exists");
-                return false;
-            }
-
-            var hgtFiles = fileProvider.GetDirectoryContents(ELEVATION_CACHE);
-            if (hgtFiles.Any())
+            if (fileProvider.GetDirectoryContents(ELEVATION_CACHE).Any())
             {
                 return true;
             }
-            logger.LogError($"Elevation service initialization: There are no file in folder: {ELEVATION_CACHE}");
+            logger.LogError($"Elevation service initialization: The folder: {ELEVATION_CACHE} does not exists, please make sure this folder exists");
             return false;
-
         }
 
         public static Coordinate FileNameToKey(string fileName)

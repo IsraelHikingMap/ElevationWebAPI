@@ -36,6 +36,7 @@ namespace ElevationWebApi
         /// <inheritdoc/>
         public async Task Initialize()
         {
+            _logger.LogInformation("Starting Initialization of In Memory Elevation Provider.");
             if (!ElevationHelper.ValidateFolder(_fileProvider, _logger))
             {
                 return;
@@ -64,7 +65,7 @@ namespace ElevationWebApi
             }
             
             await Task.WhenAll(_initializationTaskPerLatLng.Values);
-            _logger.LogInformation("Initialization complete.");
+            _logger.LogInformation("Finished Initialization.");
         }
 
         /// <inheritdoc/>
