@@ -13,7 +13,7 @@ Now surf to `localhost:12345/swagger/` to get a simple UI to interact with the e
 This service was tested on the entire world with memory mapped files and on a small country with in memory files.
 
 This service supports both GET and POST methods for getting the elevation.
-You can place in the elevation folder zip or bz2 compressed files and the service will decompress them when booting up.
+For in memory provider you can place in the elevation folder zip or bz2 compressed files and the service will decompress them when booting up.
 
 This docker image is also available on docker hub: `israelhikingmap/elevationwebapi`
 

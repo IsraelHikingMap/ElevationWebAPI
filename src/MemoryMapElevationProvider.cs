@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -22,7 +21,6 @@ namespace ElevationWebApi
         private readonly ILogger<MemoryMapElevationProvider> _logger;
         private readonly IFileProvider _fileProvider;
         private readonly ConcurrentDictionary<Coordinate, Task<FileAndSamples>> _mappedFilesCache;
-        private readonly Dictionary<Coordinate, (string path, long length)> _initializationAvailableFiles;
 
         /// <summary>
         /// Constructor
@@ -34,7 +32,6 @@ namespace ElevationWebApi
             _logger = logger;
             _fileProvider = webHostEnvironment.ContentRootFileProvider;
             _mappedFilesCache = new();
-            _initializationAvailableFiles = new();
         }
 
         /// <summary>
@@ -43,29 +40,7 @@ namespace ElevationWebApi
         /// </summary>
         public Task Initialize()
         {
-            _logger.LogInformation("Starting Initialization of Memory Map Elevation Provider.");
-            if (!ElevationHelper.ValidateFolder(_fileProvider, _logger))
-            {
-                return Task.CompletedTask;
-            }
-            
-            ElevationHelper.UnzipIfNeeded(_fileProvider, _logger);
-            var hgtFiles = _fileProvider.GetDirectoryContents(ElevationHelper.ELEVATION_CACHE)
-                .Where(f => f.PhysicalPath != null && f.PhysicalPath.EndsWith(".hgt")).ToArray();
-            _logger.LogInformation($"Found {hgtFiles.Length} hgt files.");
-            foreach (var hgtFile in hgtFiles)
-            {
-                var key = ElevationHelper.FileNameToKey(hgtFile.Name);
-                if (key == null)
-                {
-                    _logger.LogWarning($"Ignoring file: {hgtFile.Name}");
-                    continue;
-                }
-
-                _initializationAvailableFiles[key] = (hgtFile.PhysicalPath, hgtFile.Length); 
-            }
-            
-            _logger.LogInformation("Finished Initialization.");
+            _logger.LogInformation("Initialization of Memory Map Elevation Provider.");
             return Task.CompletedTask;
         }
 
@@ -79,15 +54,16 @@ namespace ElevationWebApi
             var tasks = latLngs.Select(async latLng =>
             {
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
-                if (_initializationAvailableFiles.TryGetValue(key, out (string path, long length) pathAndLength) == false)
-                {
-                    return 0;
-                }
-
                 if (!_mappedFilesCache.ContainsKey(key))
                 {
-                    _logger.LogInformation($"Loading {pathAndLength.path} into memory mapped cache");
-                    _mappedFilesCache[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(pathAndLength.path, FileMode.Open), ElevationHelper.SamplesFromLength(pathAndLength.length)));
+                    var filePath = Path.Join(ElevationHelper.ELEVATION_CACHE, ElevationHelper.KeyToFileName(key));
+                    var fileInfo = _fileProvider.GetFileInfo(filePath);
+                    if (!fileInfo.Exists)
+                    {
+                        return 0;
+                    }
+                    _logger.LogInformation($"Loading {fileInfo.PhysicalPath} into memory mapped cache");
+                    _mappedFilesCache[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(fileInfo.PhysicalPath!, FileMode.Open), ElevationHelper.SamplesFromLength(fileInfo.Length)));
                 }
                 var info = await _mappedFilesCache[key];
 

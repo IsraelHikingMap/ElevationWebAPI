@@ -42,6 +42,26 @@ namespace ElevationWebApi
             return new Coordinate(bottomLeftLng, bottomLeftLat);
         }
         
+        public static string KeyToFileName(Coordinate coordinate)
+        {
+            // Get the bottom-left corner coordinates (floor the values)
+            var bottomLeftLat = (int)coordinate.Y;
+            var bottomLeftLng = (int)coordinate.X;
+    
+            // Determine hemispheres
+            var latHem = bottomLeftLat >= 0 ? "N" : "S";
+            var lonHem = bottomLeftLng >= 0 ? "E" : "W";
+    
+            // Use absolute values for the filename
+            var latAbs = Math.Abs(bottomLeftLat);
+            var lonAbs = Math.Abs(bottomLeftLng);
+    
+            // Format as HGT filename (assuming 2-digit lat, 3-digit lon format)
+            return $"{latHem}{latAbs:D2}{lonHem}{lonAbs:D3}.hgt";
+        }
+        
+        
+        
         public static void UnzipIfNeeded(IFileProvider fileProvider, ILogger logger)
         {
             var hgtFiles = fileProvider.GetDirectoryContents(ELEVATION_CACHE);
