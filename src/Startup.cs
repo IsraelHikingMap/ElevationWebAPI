@@ -36,6 +36,7 @@ namespace ElevationWebApi
         /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLazyCache();
             if (Environment.GetEnvironmentVariable("ELEVATION_PROVIDER") == "MMAP")
             {
                 services.AddSingleton<IElevationProvider, MemoryMapElevationProvider>();

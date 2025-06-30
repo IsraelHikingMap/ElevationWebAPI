@@ -1,10 +1,11 @@
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Threading.Tasks;
+using LazyCache;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
@@ -20,18 +21,22 @@ namespace ElevationWebApi
     {
         private readonly ILogger<MemoryMapElevationProvider> _logger;
         private readonly IFileProvider _fileProvider;
-        private readonly ConcurrentDictionary<Coordinate, Task<FileAndSamples>> _mappedFilesCache;
+        private readonly IAppCache _appCache;
+        private readonly int _cacheSlidingWindowTimeInMinutes;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="webHostEnvironment"></param>
         /// <param name="logger"></param>
-        public MemoryMapElevationProvider(IWebHostEnvironment webHostEnvironment, ILogger<MemoryMapElevationProvider> logger)
+        /// <param name="appCache"></param>
+        public MemoryMapElevationProvider(IWebHostEnvironment webHostEnvironment, ILogger<MemoryMapElevationProvider> logger, IAppCache appCache)
         {
             _logger = logger;
+            _appCache = appCache;
             _fileProvider = webHostEnvironment.ContentRootFileProvider;
-            _mappedFilesCache = new();
+            var cacheSlidingWindow = Environment.GetEnvironmentVariable("CACHE_SLIDING_WINDOW");
+            _cacheSlidingWindowTimeInMinutes = string.IsNullOrWhiteSpace(cacheSlidingWindow) ? 30 : int.Parse(cacheSlidingWindow);
         }
 
         /// <summary>
@@ -54,19 +59,31 @@ namespace ElevationWebApi
             var tasks = latLngs.Select(async latLng =>
             {
                 var key = new Coordinate(Math.Floor(latLng[0]), Math.Floor(latLng[1]));
-                if (!_mappedFilesCache.ContainsKey(key))
+                var info = await _appCache.GetOrAddAsync(key.ToString(), () =>
                 {
-                    var filePath = Path.Join(ElevationHelper.ELEVATION_CACHE, ElevationHelper.KeyToFileName(key));
-                    var fileInfo = _fileProvider.GetFileInfo(filePath);
-                    if (!fileInfo.Exists)
+                    return Task.Run(() =>
                     {
-                        return 0;
-                    }
-                    _logger.LogInformation($"Loading {fileInfo.PhysicalPath} into memory mapped cache");
-                    _mappedFilesCache[key] = Task.Run(() => new FileAndSamples(MemoryMappedFile.CreateFromFile(fileInfo.PhysicalPath!, FileMode.Open), ElevationHelper.SamplesFromLength(fileInfo.Length)));
-                }
-                var info = await _mappedFilesCache[key];
+                        var filePath = Path.Join(ElevationHelper.ELEVATION_CACHE, ElevationHelper.KeyToFileName(key));
+                        var fileInfo = _fileProvider.GetFileInfo(filePath);
+                        if (!fileInfo.Exists)
+                        {
+                            _logger.LogWarning($"Missing hgt file for {key}");
+                            return new FileAndSamples(null, 0);
+                        }
 
+                        _logger.LogInformation($"Loading {fileInfo.PhysicalPath} into memory mapped cache");
+                        return new FileAndSamples(
+                            MemoryMappedFile.CreateFromFile(fileInfo.PhysicalPath!, FileMode.Open),
+                            ElevationHelper.SamplesFromLength(fileInfo.Length));
+                    });
+
+                }, TimeSpan.FromMinutes(_cacheSlidingWindowTimeInMinutes));
+
+                if (info.File == null)
+                {
+                    return 0;
+                }
+                
                 var exactLocation = new Coordinate(Math.Abs(latLng[0] - key.X) * (info.Samples - 1),
                     (1 - Math.Abs(latLng[1] - key.Y)) * (info.Samples - 1));
 

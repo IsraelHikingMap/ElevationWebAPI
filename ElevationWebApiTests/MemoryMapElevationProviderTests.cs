@@ -4,6 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using NSubstitute;
 using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
+using LazyCache;
 
 namespace ElevationWebApiTests;
 
@@ -24,7 +25,7 @@ public sealed class MemoryMapElevationProviderTests
         var hosting = Substitute.For<IWebHostEnvironment>();
         hosting.ContentRootFileProvider = new PhysicalFileProvider( GetSourceFileDirectory()!);
         var logger = Substitute.For<ILogger<MemoryMapElevationProvider>>();
-        provider = new MemoryMapElevationProvider(hosting, logger);
+        provider = new MemoryMapElevationProvider(hosting, logger, new CachingService());
     }
     
     

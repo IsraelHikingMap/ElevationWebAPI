@@ -21,3 +21,8 @@ You can choose between two types of elevation providers by specifying the `ELEVA
 `MMAP` - For memory mapped elevation provider
 Default - In memory elevation provider
 
+The memory mapped elevation provider is using a cache to store the files.
+You can change the cache sliding window timeout using `CACHE_SLIDING_WINDOW` environment variable.
+The default is 30 and the units are minutes.
+This means that if a file is not used in the last 30 minutes it will be evacuated from the cache.
+
